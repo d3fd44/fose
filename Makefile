@@ -1,4 +1,4 @@
-LIBS     ?= -lraylib -lm
+LIBS     ?= -lraylib -lm -lcjson
 FLAGS    ?= -Wall -Wextra
 CC       ?= gcc
 
