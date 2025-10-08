@@ -1,3 +1,4 @@
+#include <raylib.h>
 
 #include "fose.h"
 
@@ -9,6 +10,8 @@ int       n      = 0   ;
 
 int main(int argc, char* argv[])
 {
+    SetTraceLogLevel(LOG_NONE);
+
     init(argc > 1 ? argv[1] : "./harmonics.json");
 
     Harmonic* cur = series;
@@ -16,7 +19,7 @@ int main(int argc, char* argv[])
     InitWindow(0, 0, "GG");
 
     SetTargetFPS(60);
-    ToggleBorderlessWindowed();
+    // ToggleBorderlessWindowed();
 
     int screenHeight = GetScreenHeight();
     int screenWidth = GetScreenWidth();
@@ -47,6 +50,7 @@ int main(int argc, char* argv[])
                         ClearBackground(RAYWHITE);
                         for (int x = -2000; x <= 2000; x += UNIT_SIZE) DrawLine(x, -2000, x, 2000, DEEP_SPACE);
                         for (int y = -2000; y <= 2000; y += UNIT_SIZE) DrawLine(-2000, y, 2000, y, DEEP_SPACE);
+                        DrawFPS(- screenWidth / 2,screenHeight /-2);
 
                         DrawTextureRec(
                                 canvas.texture,
@@ -70,7 +74,7 @@ int main(int argc, char* argv[])
         BeginTextureMode(canvas);
                 BeginMode2D(cam);
                         
-                        DrawLineEx(line[0], line[1], 10.0f, DEEP_SPACE);
+                        DrawLineEx(line[0], line[1], 5.0f, DEEP_SPACE);
 
                 EndMode2D();
         EndTextureMode();
