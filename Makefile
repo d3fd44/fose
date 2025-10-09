@@ -35,12 +35,11 @@ $(OBJDIR)/%.o: %.c
 
 -include $(DEPS)
 
-run: all
-	@printf '%b\n' '$(CYAN)$(BOLD)==>$(RESET) Running $(TARGET)\n'
-	@./$(TARGET)
+# run: all
+# 	@printf '%b\n' '$(CYAN)$(BOLD)==>$(RESET) Running $(TARGET)\n'
+# 	@./$(TARGET)
 
 clean:
 	@printf '%b\n' '$(RED)$(BOLD)==>$(RESET) Cleaning build files...'
 	@rm -rf $(BUILDDIR)
 	@printf '%b\n' '$(GREEN)DONE.$(RESET)'
-
