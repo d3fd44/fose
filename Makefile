@@ -26,6 +26,7 @@ $(TARGET): $(OBJS)
 	@printf '%b\n' '$(CYAN)$(BOLD)==>$(RESET) Linking fose...'
 	@mkdir -p $(BINDIR)
 	@$(CC) $(FLAGS) $(OBJS) -o $@ $(LIBS)
+	@ln -s $(BINDIR)/fose fose
 	@printf '%b\n' '$(GREEN)DONE.$(RESET)'
 
 $(OBJDIR)/%.o: %.c
