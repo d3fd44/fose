@@ -17,7 +17,7 @@
 #define ARR_TIP_LAST   5
 
 #ifndef UNIT_SIZE
-# define UNIT_SIZE 100
+# define UNIT_SIZE 80
 #endif
 
 #define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))

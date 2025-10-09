@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
         BeginTextureMode(canvas);
                 BeginMode2D(cam);
                         
-                        DrawLineEx(line[0], line[1], 5.0f, DEEP_SPACE);
+                        DrawLineEx(line[0], line[1], 3.5f, DEEP_SPACE);
 
                 EndMode2D();
         EndTextureMode();
