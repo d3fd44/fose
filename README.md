@@ -5,10 +5,11 @@ just hit `make` to build.\
 dependencies:
 - raylib
 - cJSON\
+
 make sure both are installed.
 
 usage:\
-    ./fose examples/random.json
+    `./fose examples/random.json`
 
 the first arg is the json file describing the series and it has the following form:
 ```json
