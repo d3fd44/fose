@@ -26,7 +26,7 @@ $(TARGET): $(OBJS)
 	@printf '%b\n' '$(CYAN)$(BOLD)==>$(RESET) Linking fose...'
 	@mkdir -p $(BINDIR)
 	@$(CC) $(FLAGS) $(OBJS) -o $@ $(LIBS)
-	@ln -s $(BINDIR)/fose fose
+	@if [[ -e fose ]]; then echo "link already exists."; else ln -s $(BINDIR)/fose fose; fi
 	@printf '%b\n' '$(GREEN)DONE.$(RESET)'
 
 $(OBJDIR)/%.o: %.c
