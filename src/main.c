@@ -8,13 +8,13 @@ Harmonic* tail   = NULL;
 int       n      = 0   ;
 // clang-format on
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     SetTraceLogLevel(LOG_NONE);
 
     init(argc > 1 ? argv[1] : "./harmonics.json");
 
-    Harmonic* cur = series;
+    Harmonic *cur = series;
 
     InitWindow(0, 0, "GG");
 
@@ -55,14 +55,13 @@ int main(int argc, char* argv[])
                         DrawTextureRec(
                                 canvas.texture,
                                 (Rectangle) {0, 0, (float)canvas.texture.width, -(float)canvas.texture.height},
-                                (Vector2)   { -screenWidth * 0.5f, -screenHeight * 0.5 }, WHITE
-                                );
+                                (Vector2)   { -screenWidth * 0.5f, -screenHeight * 0.5 }, WHITE);
 
                         cur = series;
 
                         while (cur->next != NULL)
                         {
-                            DrawSplineLinear(cur->points, 6, 3.0f, BLUE);
+                            DrawSplineLinear(cur->points, 6, 3.0f, DEEP_SPACE);
                             cur = cur->next;
                         }
                         DrawSplineLinear(cur->points, 6, 3.0f, RED);
@@ -74,7 +73,7 @@ int main(int argc, char* argv[])
         BeginTextureMode(canvas);
                 BeginMode2D(cam);
                         
-                        DrawLineEx(line[0], line[1], 4.5f, DEEP_SPACE);
+                        DrawLineEx(line[0], line[1], 5.5f, BLUE);
 
                 EndMode2D();
         EndTextureMode();

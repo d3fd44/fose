@@ -8,13 +8,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern Harmonic* series;
-extern Harmonic* tail;
+extern Harmonic *series;
+extern Harmonic *tail;
 extern int       n;
 
-char* rjsonassert(const char* path)
+char *rjsonassert(const char *path)
 {
-    FILE* fh = fopen(path, "r");
+    FILE *fh = fopen(path, "r");
     assert(fh);
 
     fseek(fh, 0, SEEK_END);
@@ -26,7 +26,7 @@ char* rjsonassert(const char* path)
     }
     fseek(fh, 0, SEEK_SET);
 
-    char* buffer = (char*)calloc(fsize + 1, sizeof(char));
+    char *buffer = (char *)calloc(fsize + 1, sizeof(char));
     if (buffer == NULL)
     {
         fclose(fh);
@@ -43,11 +43,11 @@ char* rjsonassert(const char* path)
 // ** TODO ** it works fine, but looks shit
 void mkharmonic(double coe, double omega, double phase)
 {
-    Harmonic* new = (Harmonic*)calloc(1, sizeof(Harmonic));
+    Harmonic *new = (Harmonic *)calloc(1, sizeof(Harmonic));
     assert(new);
 
     new->n = n++;
-    new->mag = UNIT_SIZE* coe;
+    new->mag = UNIT_SIZE *coe;
     new->omega = omega;
     new->phase = phase;
 
@@ -116,9 +116,9 @@ Vector2 rotpoint(Vector2 point, Vector2 center, float av)
     return (Vector2){ center.x + (x * pcos - y * psin), center.y + (x * psin + y * pcos) };
 }
 
-void rotarr(Vector2* points, float av)
+void rotarr(Vector2 *points, float av)
 {
-    Harmonic* prev = container_of(points, Harmonic, points)->prev;
+    Harmonic *prev = container_of(points, Harmonic, points)->prev;
     Vector2   base = { 0 };
 
     if (prev != NULL)
@@ -128,7 +128,7 @@ void rotarr(Vector2* points, float av)
         points[i] = rotpoint(points[i], base, av);
 }
 
-void mvarr(Vector2* points, Vector2 dist)
+void mvarr(Vector2 *points, Vector2 dist)
 {
     for (size_t i = 0; i < ARR_POINTS; i++)
     {
@@ -137,9 +137,9 @@ void mvarr(Vector2* points, Vector2 dist)
     }
 }
 
-void updatestate(Harmonic* series)
+void updatestate(Harmonic *series)
 {
-    Harmonic* cur = series;
+    Harmonic *cur = series;
     float     omega;
 
     Vector2 diff = { 0 };
@@ -158,27 +158,27 @@ void updatestate(Harmonic* series)
     rotarr(cur->points, omega);
 }
 
-void init(const char* path)
+void init(const char *path)
 {
-    cJSON* json = cJSON_Parse(rjsonassert(path));
+    cJSON *json = cJSON_Parse(rjsonassert(path));
     assert(json);
 
-    cJSON* njson = cJSON_GetObjectItemCaseSensitive(json, "count");
+    cJSON *njson = cJSON_GetObjectItemCaseSensitive(json, "count");
 
     if (!cJSON_IsNumber(njson))
         assert(0);
     int total = cJSON_GetNumberValue(njson);
 
-    cJSON* harmonics = cJSON_GetObjectItemCaseSensitive(json, "harmonics");
+    cJSON *harmonics = cJSON_GetObjectItemCaseSensitive(json, "harmonics");
     if (!harmonics)
         assert(0);
 
-    cJSON* h = NULL;
+    cJSON *h = NULL;
 
     cJSON_ArrayForEach(h, harmonics)
     {
-        cJSON* mag_omega_phase[3];
-        cJSON* number = NULL;
+        cJSON *mag_omega_phase[3];
+        cJSON *number = NULL;
         char   i = 0;
 
         cJSON_ArrayForEach(number, h)

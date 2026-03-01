@@ -7,7 +7,8 @@ BINDIR   := $(BUILDDIR)/bin
 OBJDIR   := $(BUILDDIR)/obj
 TARGET   := $(BINDIR)/fose
 
-SRCS     := $(shell find . -type f -name '*.c' | sort)
+SRCS     := $(shell find src -type f -name '*.c' | sort)
+UTLS     := util/ft.c
 OBJS     := $(patsubst %.c,$(OBJDIR)/%.o,$(SRCS))
 DEPS     := $(OBJS:.o=.d)
 
@@ -26,7 +27,10 @@ $(TARGET): $(OBJS)
 	@printf '%b\n' '$(CYAN)$(BOLD)==>$(RESET) Linking fose...'
 	@mkdir -p $(BINDIR)
 	@$(CC) $(FLAGS) $(OBJS) -o $@ $(LIBS)
-	@if [[ -e fose ]]; then echo "link already exists."; else ln -s $(BINDIR)/fose fose; fi
+	@if [[ -L fose ]]; then echo "fose link already exists."; else ln -s $(BINDIR)/fose fose; fi
+	@printf '%b\n' '$(CYAN)$(BOLD)==>$(RESET) Building $(UTLS)'
+	@$(CC) -o $(BINDIR)/ft $(UTLS) -lm
+	@if [[ -L ft ]]; then echo "ft link already exists."; else ln -s $(BINDIR)/ft ft; fi
 	@printf '%b\n' '$(GREEN)DONE.$(RESET)'
 
 $(OBJDIR)/%.o: %.c
@@ -36,11 +40,9 @@ $(OBJDIR)/%.o: %.c
 
 -include $(DEPS)
 
-# run: all
-# 	@printf '%b\n' '$(CYAN)$(BOLD)==>$(RESET) Running $(TARGET)\n'
-# 	@./$(TARGET)
-
 clean:
 	@printf '%b\n' '$(RED)$(BOLD)==>$(RESET) Cleaning build files...'
-	@rm -rf $(BUILDDIR)
+	@rm -rf $(BUILDDIR) 
+	@if [[ -L fose ]]; then rm ./fose; fi
+	@if [[ -L ft ]]; then rm ./ft; fi
 	@printf '%b\n' '$(GREEN)DONE.$(RESET)'
