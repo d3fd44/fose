@@ -4,7 +4,7 @@ fose - fourier series (i know, ugly name)
 just hit `make` to build.\
 dependencies:
 - raylib
-- cJSON\
+- cJSON
 
 make sure both are installed.
 
