@@ -1,16 +1,52 @@
-#include "fose.h"
-
 #include <assert.h>
 #include <cjson/cJSON.h>
 #include <math.h>
+#include <raylib.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-extern Harmonic *series;
-extern Harmonic *tail;
-extern int       n;
+#define ARR_TIP_WIDTH  5
+#define ARR_TIP_HEIGHT 10
+#define ARR_TIP_DIAG   11.180339887f
+#define ARR_POINTS     6
+#define ARR_BASE       0
+#define ARR_BASE_END   1
+#define ARR_TIP_LEFT   2
+#define ARR_TIP_END    3
+#define ARR_TIP_RIGHT  4
+#define ARR_TIP_LAST   5
+
+#ifndef UNIT_SIZE
+# define UNIT_SIZE 100
+#endif
+
+#define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
+
+#define CRIMSON_ROSE                    (Color){ 230, 65, 91, 255 }
+#define AQUA_MINT                       (Color){ 70, 239, 207, 255 }
+#define INDIGO_VIOLET                   (Color){ 92, 74, 230, 255 }
+#define DEEP_SPACE                      (Color){ 24, 21, 34, 255 }
+#define MISTY_GRAY                      (Color){ 230, 232, 240, 255 }
+
+typedef struct Harmonic
+{
+    int              n;
+    double           mag;
+    double           omega;
+    double           phase;
+    Vector2          points[6];
+    struct Harmonic *next;
+    struct Harmonic *prev;
+
+} Harmonic;
+
+// clang-format off
+Harmonic* series = NULL;
+Harmonic* tail   = NULL;
+int       n      = 0   ; // why the hell did i declare it in another file? this drove me nuts
+// clang-format on
 
 char *rjsonassert(const char *path)
 {
@@ -167,7 +203,8 @@ void init(const char *path)
 
     if (!cJSON_IsNumber(njson))
         assert(0);
-    int total = cJSON_GetNumberValue(njson);
+
+    int total = cJSON_GetNumberValue(njson);  // unused
 
     cJSON *harmonics = cJSON_GetObjectItemCaseSensitive(json, "harmonics");
     if (!harmonics)
@@ -192,4 +229,79 @@ void init(const char *path)
                    cJSON_GetNumberValue(mag_omega_phase[1]),
                    cJSON_GetNumberValue(mag_omega_phase[2]));
     }
+}
+
+int main(int argc, char *argv[])
+{
+    init(argc > 1 ? argv[1] : "./harmonics.json");
+
+    Harmonic *cur = series;
+
+    SetTraceLogLevel(LOG_NONE);
+    InitWindow(0, 0, "GG");
+    SetTargetFPS(60);
+
+    int screenHeight = GetScreenHeight();
+    int screenWidth = GetScreenWidth();
+
+    Vector2       line[2] = { tail->points[ARR_TIP_END], tail->points[ARR_TIP_END] };
+    unsigned char c = 0;
+
+    Camera2D cam = { 0 };
+    cam.target = (Vector2){ 0.0f, 0.0f };
+    cam.offset = (Vector2){ screenWidth * 0.5f, screenHeight * 0.5f };
+    cam.rotation = 0.0f;
+    cam.zoom = 1.0f;
+
+    RenderTexture2D canvas = LoadRenderTexture(screenWidth, screenHeight);
+
+    // clang-format off
+    BeginTextureMode(canvas);
+            ClearBackground((Color){ 0, 0, 0, 0 });
+    EndTextureMode();
+
+    while (!WindowShouldClose())
+    {
+        updatestate(series);
+
+        BeginDrawing();
+                BeginMode2D(cam);
+
+                        ClearBackground(RAYWHITE);
+                        for (int x = -2000; x <= 2000; x += UNIT_SIZE) DrawLine(x, -2000, x, 2000, DEEP_SPACE);
+                        for (int y = -2000; y <= 2000; y += UNIT_SIZE) DrawLine(-2000, y, 2000, y, DEEP_SPACE);
+                        DrawFPS(- screenWidth / 2,screenHeight /-2);
+
+                        DrawTextureRec(
+                                canvas.texture,
+                                (Rectangle) {0, 0, (float)canvas.texture.width, -(float)canvas.texture.height},
+                                (Vector2)   { -screenWidth * 0.5f, -screenHeight * 0.5 }, WHITE);
+
+                        cur = series;
+
+                        while (cur->next != NULL)
+                        {
+                            DrawSplineLinear(cur->points, 6, 3.0f, DEEP_SPACE);
+                            cur = cur->next;
+                        }
+                        DrawSplineLinear(cur->points, 6, 3.0f, RED);
+                        line[c] = cur->points[ARR_TIP_END];
+                        c = (c + 1) % 2;
+                                
+                EndMode2D();
+        EndDrawing();
+        BeginTextureMode(canvas);
+                BeginMode2D(cam);
+                        
+                        DrawLineEx(line[0], line[1], 5.5f, BLUE);
+
+                EndMode2D();
+        EndTextureMode();
+        // clang-format on
+    }
+
+    UnloadRenderTexture(canvas);
+    CloseWindow();
+
+    return 0;
 }
