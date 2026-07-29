@@ -26,4 +26,4 @@ the first arg is the json file describing the series and it has the following fo
 ```
 each array has [magnitude, angular velocity (omega), phase].
 
-> Note: this code was written just for fun, it's far from being good and needs heavy work from scratch. but i don't care for now.
+> Note: this code was written just for fun, it's far from being good and needs heavy work from scratch. but i don't care for now (seems like i do care, but it needs a little bit of time).
