@@ -5,43 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define ARR_BASE                        0
-#define ARR_END                         1
-
-#define UNIT_SIZE                       100
-
-#define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
-
-#define CRIMSON_ROSE                    (Color){ 230, 65, 91, 255 }
-#define AQUA_MINT                       (Color){ 70, 239, 207, 255 }
-#define INDIGO_VIOLET                   (Color){ 92, 74, 230, 255 }
-#define DEEP_SPACE                      (Color){ 24, 21, 34, 255 }
-#define MISTY_GRAY                      (Color){ 230, 232, 240, 255 }
-
-#define PRINT_DEBUG(X) \
-    do \
-    { \
-        Harmonic *temp = cur; \
-        printf("%s:\n", X); \
-        while (cur->next != NULL) \
-        { \
-            printf( \
-              "prev: %-14p, next: %-14p, n: %d, mag: %06.2f, omega: %06.2f, phase: %06.2f, base: " \
-              "(%06.2f, %06.2f), tip: " \
-              "(%06.2f, %06.2f)\n", \
-              cur->prev, cur->next, cur->n, cur->mag, cur->omega, cur->phase, cur->base.x, \
-              cur->base.y, cur->tip.x, cur->tip.y); \
-            cur = cur->next; \
-        } \
-        printf( \
-          "prev: %-14p, next: %-14p, n: %d, mag: %06.2f, omega: %06.2f, phase: %06.2f, base: " \
-          "(%06.2f, " \
-          "%06.2f), tip: " \
-          "(%06.2f, %06.2f)\n", \
-          cur->prev, cur->next, cur->n, cur->mag, cur->omega, cur->phase, cur->base.x, \
-          cur->base.y, cur->tip.x, cur->tip.y); \
-        cur = temp; \
-    } while (0)
 
 typedef struct Harmonic
 {
@@ -58,7 +21,6 @@ typedef struct Harmonic
 
 Harmonic *series_head = NULL;
 Harmonic *series_tail = NULL;
-int       n = 0;
 
 Vector2 ORIGIN = (Vector2){ 0.0f, 0.0f };
 
@@ -222,8 +184,7 @@ int main(int argc, char *argv[])
 {
     init(argc > 1 ? argv[1] : "./harmonics.json");
 
-    // Harmonic *cur = series_head;
-    Harmonic *cur = series_head;
+    Harmonic *cur;
 
     SetTraceLogLevel(LOG_NONE);
     InitWindow(0, 0, "GG");
@@ -240,8 +201,6 @@ int main(int argc, char *argv[])
     cam.offset = (Vector2){ screenWidth * 0.5f, screenHeight * 0.5f };
     cam.rotation = 0.0f;
     cam.zoom = 1.0f;
-
-    PRINT_DEBUG("befor the main loop");
 
     RenderTexture2D canvas = LoadRenderTexture(screenWidth, screenHeight);
 
