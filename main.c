@@ -5,20 +5,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define ARR_TIP_WIDTH  5
-#define ARR_TIP_HEIGHT 10
-#define ARR_TIP_DIAG   11.180339887f
-#define ARR_POINTS     6
-#define ARR_BASE       0
-#define ARR_BASE_END   1
-#define ARR_TIP_LEFT   2
-#define ARR_TIP_END    3
-#define ARR_TIP_RIGHT  4
-#define ARR_TIP_LAST   5
+#define ARR_BASE                        0
+#define ARR_END                         1
 
-#ifndef UNIT_SIZE
-# define UNIT_SIZE 100
-#endif
+#define UNIT_SIZE                       100
 
 #define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
 
@@ -28,15 +18,39 @@
 #define DEEP_SPACE                      (Color){ 24, 21, 34, 255 }
 #define MISTY_GRAY                      (Color){ 230, 232, 240, 255 }
 
+#define PRINT_DEBUG(X) \
+    do \
+    { \
+        Harmonic *temp = cur; \
+        printf("%s:\n", X); \
+        while (cur->next != NULL) \
+        { \
+            printf( \
+              "prev: %-14p, next: %-14p, n: %d, mag: %06.2f, omega: %06.2f, phase: %06.2f, base: " \
+              "(%06.2f, %06.2f), tip: " \
+              "(%06.2f, %06.2f)\n", \
+              cur->prev, cur->next, cur->n, cur->mag, cur->omega, cur->phase, cur->base.x, \
+              cur->base.y, cur->tip.x, cur->tip.y); \
+            cur = cur->next; \
+        } \
+        printf( \
+          "prev: %-14p, next: %-14p, n: %d, mag: %06.2f, omega: %06.2f, phase: %06.2f, base: " \
+          "(%06.2f, " \
+          "%06.2f), tip: " \
+          "(%06.2f, %06.2f)\n", \
+          cur->prev, cur->next, cur->n, cur->mag, cur->omega, cur->phase, cur->base.x, \
+          cur->base.y, cur->tip.x, cur->tip.y); \
+        cur = temp; \
+    } while (0)
+
 typedef struct Harmonic
 {
     int              n;
     double           mag;
     double           omega;
     double           phase;
-    Vector2         *base;
+    Vector2          base;
     Vector2          tip;
-    Vector2          points[6];  // this might be nuked
     struct Harmonic *next;
     struct Harmonic *prev;
 
@@ -46,7 +60,7 @@ Harmonic *series_head = NULL;
 Harmonic *series_tail = NULL;
 int       n = 0;
 
-const Vector2 ORIGIN = (Vector2){ 0.0f, 0.0f };
+Vector2 ORIGIN = (Vector2){ 0.0f, 0.0f };
 
 char *rjsonassert(const char *path)
 {
@@ -94,25 +108,10 @@ void mkharmonic(double coe, double omega, double phase)
         series_head->next = NULL;
         series_head->prev = NULL;
 
-        series_head->points[ARR_BASE] = ORIGIN;
-        float basex = series_head->points[ARR_BASE].x;
-        float basey = series_head->points[ARR_BASE].y;
+        series_head->base = ORIGIN;
 
-        series_head->points[ARR_TIP_LAST] = series_head->points[ARR_BASE_END]
-          = (Vector2){ ((series_head->mag - ARR_TIP_HEIGHT) * cos(phase)) + basex,
-                       -((series_head->mag - ARR_TIP_HEIGHT) * sin(phase)) + basey };
-        series_head->points[ARR_TIP_END] = (Vector2){ series_head->mag * cos(phase) + basex,
-                                                      -series_head->mag * sin(phase) + basey };
-
-        double arrleftdeg = atan(tan(ARR_TIP_WIDTH / (series_head->mag - ARR_TIP_HEIGHT))) + phase;
-        double arrrightdeg = phase - atan(tan(ARR_TIP_WIDTH / (series_head->mag - ARR_TIP_HEIGHT)));
-        double diag
-          = sqrt(25 + ((series_head->mag - ARR_TIP_HEIGHT) * (series_head->mag - ARR_TIP_HEIGHT)));
-
-        series_head->points[ARR_TIP_LEFT]
-          = (Vector2){ diag * cos(arrleftdeg) + basex, -diag * sin(arrleftdeg) + basey };
-        series_head->points[ARR_TIP_RIGHT]
-          = (Vector2){ diag * cos(arrrightdeg) + basex, -diag * sin(arrrightdeg) + basey };
+        series_head->tip
+          = (Vector2){ ((series_head->mag) * cos(phase)), -((series_head->mag) * sin(phase)) };
 
         return;
     }
@@ -120,80 +119,66 @@ void mkharmonic(double coe, double omega, double phase)
     series_tail->next->prev = series_tail;
     series_tail = new;
 
-    series_tail->points[ARR_BASE] = series_tail->prev->points[ARR_TIP_END];
-    float basex = series_tail->points[ARR_BASE].x;
-    float basey = series_tail->points[ARR_BASE].y;
+    series_tail->base = series_tail->prev->tip;
+    float basex = series_tail->base.x;
+    float basey = series_tail->base.y;
 
-    series_tail->points[ARR_TIP_LAST] = series_tail->points[ARR_BASE_END]
-      = (Vector2){ ((series_tail->mag - ARR_TIP_HEIGHT) * cos(phase)) + basex,
-                   -((series_tail->mag - ARR_TIP_HEIGHT) * sin(phase)) + basey };
-    series_tail->points[ARR_TIP_END]
-      = (Vector2){ series_tail->mag * cos(phase) + basex, -series_tail->mag * sin(phase) + basey };
-
-    double arrleftdeg = atan(tan(ARR_TIP_WIDTH / (series_tail->mag - ARR_TIP_HEIGHT))) + phase;
-    double arrrightdeg = phase - atan(tan(ARR_TIP_WIDTH / (series_tail->mag - ARR_TIP_HEIGHT)));
-    double diag
-      = sqrt(25 + ((series_tail->mag - ARR_TIP_HEIGHT) * (series_tail->mag - ARR_TIP_HEIGHT)));
-
-    series_tail->points[ARR_TIP_LEFT]
-      = (Vector2){ diag * cos(arrleftdeg) + basex, -diag * sin(arrleftdeg) + basey };
-    series_tail->points[ARR_TIP_RIGHT]
-      = (Vector2){ diag * cos(arrrightdeg) + basex, -diag * sin(arrrightdeg) + basey };
+    series_tail->tip = (Vector2){ ((series_tail->mag) * cos(phase)) + basex,
+                                  -((series_tail->mag) * sin(phase)) + basey };
 
     series_tail->next = NULL;
 }
 
-Vector2 translate_point(Vector2 point, Vector2 center, float av)
+Vector2 translate_point(Vector2 point, Vector2 orig, float omega)
 {
-    float psin = sinf(av), pcos = cosf(av);
-    float x = point.x - center.x;
-    float y = point.y - center.y;
+    float psin = sinf(omega), pcos = cosf(omega);
+    float x = point.x - orig.x;
+    float y = point.y - orig.y;
 
     // [x'] = [x][cos theta   -sin theta]
     // [y'] = [y][sin theta    cos theta]
-    return (Vector2){ center.x + (x * pcos - y * psin), center.y + (x * psin + y * pcos) };
+    return (Vector2){ orig.x + (x * pcos - y * psin), orig.y + (x * psin + y * pcos) };
 }
 
-void translate_arrow(Vector2 *points, float av)
+void translate_arrow(Harmonic *h, float omega)
 {
-    Harmonic *prev = container_of(points, Harmonic, points)->prev;
-    Vector2   base = { 0 };
+    Vector2 orig = { 0 };
 
-    if (prev != NULL)
-        base = prev->points[ARR_TIP_END];
+    if (h->prev != NULL)
+        orig = h->prev->tip;
 
-    for (size_t i = 0; i < ARR_POINTS; i++)
-        points[i] = translate_point(points[i], base, av);
+    h->base = translate_point(h->base, orig, omega);
+    h->tip = translate_point(h->tip, orig, omega);
 }
 
-void move_arrow(Vector2 *points, Vector2 dist)
+void move_arrow(Harmonic *h, Vector2 dist)
 {
-    for (size_t i = 0; i < ARR_POINTS; i++)
-    {
-        points[i].x += dist.x;
-        points[i].y += dist.y;
-    }
+    h->base.x += dist.x;
+    h->base.y += dist.y;
+    h->tip.x += dist.x;
+    h->tip.y += dist.y;
 }
 
 void update_state(Harmonic *series)
 {
     Harmonic *cur = series;
     float     omega;
+    float     dt = GetFrameTime();
 
     Vector2 diff = { 0 };
     while (cur->next != NULL)
     {
-        omega = cur->omega * GetFrameTime();
-        Vector2 nextarrbaseold = cur->points[ARR_TIP_END];
+        omega = cur->omega * dt;
+        Vector2 nextarrbaseold = cur->tip;
 
-        translate_arrow(cur->points, omega);
-        diff.x -= nextarrbaseold.x - cur->points[ARR_TIP_END].x;
-        diff.y -= nextarrbaseold.y - cur->points[ARR_TIP_END].y;
-        move_arrow(cur->next->points, diff);
+        translate_arrow(cur, omega);
+        diff.x -= nextarrbaseold.x - cur->tip.x;
+        diff.y -= nextarrbaseold.y - cur->tip.y;
+        move_arrow(cur->next, diff);
         cur = cur->next;
     }
-    omega = cur->omega * GetFrameTime();
-    translate_arrow(cur->points, omega);
+    omega = cur->omega * dt;
+    translate_arrow(cur, omega);
 }
 
 void init(const char *path)
@@ -237,6 +222,7 @@ int main(int argc, char *argv[])
 {
     init(argc > 1 ? argv[1] : "./harmonics.json");
 
+    // Harmonic *cur = series_head;
     Harmonic *cur = series_head;
 
     SetTraceLogLevel(LOG_NONE);
@@ -246,7 +232,7 @@ int main(int argc, char *argv[])
     int screenHeight = GetScreenHeight();
     int screenWidth = GetScreenWidth();
 
-    Vector2       line[2] = { series_tail->points[ARR_TIP_END], series_tail->points[ARR_TIP_END] };
+    Vector2       line[2] = { series_tail->tip, series_tail->tip };
     unsigned char c = 0;
 
     Camera2D cam = { 0 };
@@ -254,6 +240,8 @@ int main(int argc, char *argv[])
     cam.offset = (Vector2){ screenWidth * 0.5f, screenHeight * 0.5f };
     cam.rotation = 0.0f;
     cam.zoom = 1.0f;
+
+    PRINT_DEBUG("befor the main loop");
 
     RenderTexture2D canvas = LoadRenderTexture(screenWidth, screenHeight);
 
@@ -265,6 +253,8 @@ int main(int argc, char *argv[])
     while (!WindowShouldClose())
     {
         update_state(series_head);
+
+        cur = series_head;
 
         BeginDrawing();
                 BeginMode2D(cam);
@@ -279,15 +269,14 @@ int main(int argc, char *argv[])
                                 (Rectangle) {0, 0, (float)canvas.texture.width, -(float)canvas.texture.height},
                                 (Vector2)   { -screenWidth * 0.5f, -screenHeight * 0.5 }, WHITE);
 
-                        cur = series_head;
 
                         while (cur->next != NULL)
                         {
-                            DrawSplineLinear(cur->points, 6, 3.0f, DEEP_SPACE);
+                            DrawSplineLinear((Vector2[]){ cur->base, cur->tip }, 6, 2.0f, DEEP_SPACE);
                             cur = cur->next;
                         }
-                        DrawSplineLinear(cur->points, 6, 3.0f, RED);
-                        line[c] = cur->points[ARR_TIP_END];
+                        DrawSplineLinear((Vector2[]){ cur->base, cur->tip }, 6, 2.0f, RED);
+                        line[c] = cur->tip;
                         c = (c + 1) % 2;
                                 
                 EndMode2D();
