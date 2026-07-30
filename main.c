@@ -2,10 +2,8 @@
 #include <cjson/cJSON.h>
 #include <math.h>
 #include <raylib.h>
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #define ARR_TIP_WIDTH  5
 #define ARR_TIP_HEIGHT 10
@@ -36,17 +34,19 @@ typedef struct Harmonic
     double           mag;
     double           omega;
     double           phase;
-    Vector2          points[6];
+    Vector2         *base;
+    Vector2          tip;
+    Vector2          points[6];  // this might be nuked
     struct Harmonic *next;
     struct Harmonic *prev;
 
 } Harmonic;
 
-// clang-format off
-Harmonic* series = NULL;
-Harmonic* tail   = NULL;
-int       n      = 0   ; // why the hell did i declare it in another file? this drove me nuts
-// clang-format on
+Harmonic *series_head = NULL;
+Harmonic *series_tail = NULL;
+int       n = 0;
+
+const Vector2 ORIGIN = (Vector2){ 0.0f, 0.0f };
 
 char *rjsonassert(const char *path)
 {
@@ -70,7 +70,7 @@ char *rjsonassert(const char *path)
     }
 
     fread(buffer, 1, fsize, fh);
-    buffer[fsize] = '\0';  // do not forget this little guy
+    buffer[fsize] = '\0';
     fclose(fh);
 
     return buffer;
@@ -87,61 +87,63 @@ void mkharmonic(double coe, double omega, double phase)
     new->omega = omega;
     new->phase = phase;
 
-    if (series == NULL)
+    if (series_head == NULL)
     {
-        series = new;
-        tail = new;
-        series->next = NULL;
-        series->prev = NULL;
+        series_head = new;
+        series_tail = new;
+        series_head->next = NULL;
+        series_head->prev = NULL;
 
-        series->points[ARR_BASE] = (Vector2){ 0, 0 };
-        float basex = series->points[ARR_BASE].x;
-        float basey = series->points[ARR_BASE].y;
+        series_head->points[ARR_BASE] = ORIGIN;
+        float basex = series_head->points[ARR_BASE].x;
+        float basey = series_head->points[ARR_BASE].y;
 
-        series->points[ARR_TIP_LAST] = series->points[ARR_BASE_END]
-          = (Vector2){ ((series->mag - ARR_TIP_HEIGHT) * cos(phase)) + basex,
-                       -((series->mag - ARR_TIP_HEIGHT) * sin(phase)) + basey };
-        series->points[ARR_TIP_END]
-          = (Vector2){ series->mag * cos(phase) + basex, -series->mag * sin(phase) + basey };
+        series_head->points[ARR_TIP_LAST] = series_head->points[ARR_BASE_END]
+          = (Vector2){ ((series_head->mag - ARR_TIP_HEIGHT) * cos(phase)) + basex,
+                       -((series_head->mag - ARR_TIP_HEIGHT) * sin(phase)) + basey };
+        series_head->points[ARR_TIP_END] = (Vector2){ series_head->mag * cos(phase) + basex,
+                                                      -series_head->mag * sin(phase) + basey };
 
-        double arrleftdeg = atan(tan(ARR_TIP_WIDTH / (series->mag - ARR_TIP_HEIGHT))) + phase;
-        double arrrightdeg = phase - atan(tan(ARR_TIP_WIDTH / (series->mag - ARR_TIP_HEIGHT)));
-        double diag = sqrt(25 + ((series->mag - ARR_TIP_HEIGHT) * (series->mag - ARR_TIP_HEIGHT)));
+        double arrleftdeg = atan(tan(ARR_TIP_WIDTH / (series_head->mag - ARR_TIP_HEIGHT))) + phase;
+        double arrrightdeg = phase - atan(tan(ARR_TIP_WIDTH / (series_head->mag - ARR_TIP_HEIGHT)));
+        double diag
+          = sqrt(25 + ((series_head->mag - ARR_TIP_HEIGHT) * (series_head->mag - ARR_TIP_HEIGHT)));
 
-        series->points[ARR_TIP_LEFT]
+        series_head->points[ARR_TIP_LEFT]
           = (Vector2){ diag * cos(arrleftdeg) + basex, -diag * sin(arrleftdeg) + basey };
-        series->points[ARR_TIP_RIGHT]
+        series_head->points[ARR_TIP_RIGHT]
           = (Vector2){ diag * cos(arrrightdeg) + basex, -diag * sin(arrrightdeg) + basey };
 
         return;
     }
-    tail->next = new;
-    tail->next->prev = tail;
-    tail = new;
+    series_tail->next = new;
+    series_tail->next->prev = series_tail;
+    series_tail = new;
 
-    tail->points[ARR_BASE] = tail->prev->points[ARR_TIP_END];
-    float basex = tail->points[ARR_BASE].x;
-    float basey = tail->points[ARR_BASE].y;
+    series_tail->points[ARR_BASE] = series_tail->prev->points[ARR_TIP_END];
+    float basex = series_tail->points[ARR_BASE].x;
+    float basey = series_tail->points[ARR_BASE].y;
 
-    tail->points[ARR_TIP_LAST] = tail->points[ARR_BASE_END]
-      = (Vector2){ ((tail->mag - ARR_TIP_HEIGHT) * cos(phase)) + basex,
-                   -((tail->mag - ARR_TIP_HEIGHT) * sin(phase)) + basey };
-    tail->points[ARR_TIP_END]
-      = (Vector2){ tail->mag * cos(phase) + basex, -tail->mag * sin(phase) + basey };
+    series_tail->points[ARR_TIP_LAST] = series_tail->points[ARR_BASE_END]
+      = (Vector2){ ((series_tail->mag - ARR_TIP_HEIGHT) * cos(phase)) + basex,
+                   -((series_tail->mag - ARR_TIP_HEIGHT) * sin(phase)) + basey };
+    series_tail->points[ARR_TIP_END]
+      = (Vector2){ series_tail->mag * cos(phase) + basex, -series_tail->mag * sin(phase) + basey };
 
-    double arrleftdeg = atan(tan(ARR_TIP_WIDTH / (tail->mag - ARR_TIP_HEIGHT))) + phase;
-    double arrrightdeg = phase - atan(tan(ARR_TIP_WIDTH / (tail->mag - ARR_TIP_HEIGHT)));
-    double diag = sqrt(25 + ((tail->mag - ARR_TIP_HEIGHT) * (tail->mag - ARR_TIP_HEIGHT)));
+    double arrleftdeg = atan(tan(ARR_TIP_WIDTH / (series_tail->mag - ARR_TIP_HEIGHT))) + phase;
+    double arrrightdeg = phase - atan(tan(ARR_TIP_WIDTH / (series_tail->mag - ARR_TIP_HEIGHT)));
+    double diag
+      = sqrt(25 + ((series_tail->mag - ARR_TIP_HEIGHT) * (series_tail->mag - ARR_TIP_HEIGHT)));
 
-    tail->points[ARR_TIP_LEFT]
+    series_tail->points[ARR_TIP_LEFT]
       = (Vector2){ diag * cos(arrleftdeg) + basex, -diag * sin(arrleftdeg) + basey };
-    tail->points[ARR_TIP_RIGHT]
+    series_tail->points[ARR_TIP_RIGHT]
       = (Vector2){ diag * cos(arrrightdeg) + basex, -diag * sin(arrrightdeg) + basey };
 
-    tail->next = NULL;
+    series_tail->next = NULL;
 }
 
-Vector2 rotpoint(Vector2 point, Vector2 center, float av)
+Vector2 translate_point(Vector2 point, Vector2 center, float av)
 {
     float psin = sinf(av), pcos = cosf(av);
     float x = point.x - center.x;
@@ -152,7 +154,7 @@ Vector2 rotpoint(Vector2 point, Vector2 center, float av)
     return (Vector2){ center.x + (x * pcos - y * psin), center.y + (x * psin + y * pcos) };
 }
 
-void rotarr(Vector2 *points, float av)
+void translate_arrow(Vector2 *points, float av)
 {
     Harmonic *prev = container_of(points, Harmonic, points)->prev;
     Vector2   base = { 0 };
@@ -161,10 +163,10 @@ void rotarr(Vector2 *points, float av)
         base = prev->points[ARR_TIP_END];
 
     for (size_t i = 0; i < ARR_POINTS; i++)
-        points[i] = rotpoint(points[i], base, av);
+        points[i] = translate_point(points[i], base, av);
 }
 
-void mvarr(Vector2 *points, Vector2 dist)
+void move_arrow(Vector2 *points, Vector2 dist)
 {
     for (size_t i = 0; i < ARR_POINTS; i++)
     {
@@ -173,7 +175,7 @@ void mvarr(Vector2 *points, Vector2 dist)
     }
 }
 
-void updatestate(Harmonic *series)
+void update_state(Harmonic *series)
 {
     Harmonic *cur = series;
     float     omega;
@@ -184,14 +186,14 @@ void updatestate(Harmonic *series)
         omega = cur->omega * GetFrameTime();
         Vector2 nextarrbaseold = cur->points[ARR_TIP_END];
 
-        rotarr(cur->points, omega);
+        translate_arrow(cur->points, omega);
         diff.x -= nextarrbaseold.x - cur->points[ARR_TIP_END].x;
         diff.y -= nextarrbaseold.y - cur->points[ARR_TIP_END].y;
-        mvarr(cur->next->points, diff);
+        move_arrow(cur->next->points, diff);
         cur = cur->next;
     }
     omega = cur->omega * GetFrameTime();
-    rotarr(cur->points, omega);
+    translate_arrow(cur->points, omega);
 }
 
 void init(const char *path)
@@ -235,7 +237,7 @@ int main(int argc, char *argv[])
 {
     init(argc > 1 ? argv[1] : "./harmonics.json");
 
-    Harmonic *cur = series;
+    Harmonic *cur = series_head;
 
     SetTraceLogLevel(LOG_NONE);
     InitWindow(0, 0, "GG");
@@ -244,7 +246,7 @@ int main(int argc, char *argv[])
     int screenHeight = GetScreenHeight();
     int screenWidth = GetScreenWidth();
 
-    Vector2       line[2] = { tail->points[ARR_TIP_END], tail->points[ARR_TIP_END] };
+    Vector2       line[2] = { series_tail->points[ARR_TIP_END], series_tail->points[ARR_TIP_END] };
     unsigned char c = 0;
 
     Camera2D cam = { 0 };
@@ -262,7 +264,7 @@ int main(int argc, char *argv[])
 
     while (!WindowShouldClose())
     {
-        updatestate(series);
+        update_state(series_head);
 
         BeginDrawing();
                 BeginMode2D(cam);
@@ -277,7 +279,7 @@ int main(int argc, char *argv[])
                                 (Rectangle) {0, 0, (float)canvas.texture.width, -(float)canvas.texture.height},
                                 (Vector2)   { -screenWidth * 0.5f, -screenHeight * 0.5 }, WHITE);
 
-                        cur = series;
+                        cur = series_head;
 
                         while (cur->next != NULL)
                         {
