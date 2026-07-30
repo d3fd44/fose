@@ -151,7 +151,8 @@ int main(int argc, char *argv[])
     Harmonic *cur;
 
     SetTraceLogLevel(LOG_NONE);
-    InitWindow(0, 0, "GG");
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    InitWindow(1920, 1080, "GG");
     SetTargetFPS(60);
 
     int screenHeight = GetScreenHeight();
