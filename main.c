@@ -175,9 +175,22 @@ int main(int argc, char *argv[])
 
     while (!WindowShouldClose())
     {
-        update_state(series_head);
+        float wheel = GetMouseWheelMove();
+        if (wheel != 0)
+        {
+            Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), cam);
 
-        cur = series_head;
+            cam.offset = GetMousePosition();
+            cam.target = mouseWorldPos;
+
+            float scaleFactor = 1.0f + (0.25f * fabsf(wheel));
+
+            if (wheel < 0)
+                scaleFactor = 1.0f / scaleFactor;
+            
+            cam.zoom = Clamp(cam.zoom * scaleFactor, 0.1f, 10.0f);
+        }
+        translate_series(series_head);
 
         BeginDrawing();
                 BeginMode2D(cam);
