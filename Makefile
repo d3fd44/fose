@@ -7,7 +7,9 @@ BINDIR   := $(BUILDDIR)/bin
 OBJDIR   := $(BUILDDIR)/obj
 TARGET   := $(BINDIR)/fose
 
-SRCS     := $(shell find src -type f -name '*.c' | sort)
+# this Makefile seems to be overkill. i restructured the repo, it works for now but i'll refine this file later.
+# SRCS     := $(shell find src -type f -name '*.c' | sort)
+SRCS     := main.c
 UTLS     := util/ft.c
 OBJS     := $(patsubst %.c,$(OBJDIR)/%.o,$(SRCS))
 DEPS     := $(OBJS:.o=.d)
