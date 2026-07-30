@@ -2,17 +2,21 @@
 #include <cjson/cJSON.h>
 #include <math.h>
 #include <raylib.h>
+#include <raymath.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#define UNIT_SIZE  200
+
+#define DEEP_SPACE (Color){ 24, 21, 34, 255 }
 
 typedef struct Harmonic
 {
-    int              n;
     double           mag;
     double           omega;
     double           phase;
-    Vector2          base;
+    double           theta;  // current angle
+    Vector2         *base;
     Vector2          tip;
     struct Harmonic *next;
     struct Harmonic *prev;
@@ -52,16 +56,15 @@ char *rjsonassert(const char *path)
     return buffer;
 }
 
-// ** TODO ** it works fine, but looks shit
 void mkharmonic(double coe, double omega, double phase)
 {
     Harmonic *new = (Harmonic *)calloc(1, sizeof(Harmonic));
     assert(new);
 
-    new->n = n++;
     new->mag = UNIT_SIZE *coe;
     new->omega = omega;
     new->phase = phase;
+    new->theta = phase;
 
     if (series_head == NULL)
     {
@@ -70,10 +73,10 @@ void mkharmonic(double coe, double omega, double phase)
         series_head->next = NULL;
         series_head->prev = NULL;
 
-        series_head->base = ORIGIN;
+        series_head->base = &ORIGIN;
 
         series_head->tip
-          = (Vector2){ ((series_head->mag) * cos(phase)), -((series_head->mag) * sin(phase)) };
+          = (Vector2){ series_head->mag * cos(phase), -series_head->mag * sin(phase) };
 
         return;
     }
@@ -81,66 +84,29 @@ void mkharmonic(double coe, double omega, double phase)
     series_tail->next->prev = series_tail;
     series_tail = new;
 
-    series_tail->base = series_tail->prev->tip;
-    float basex = series_tail->base.x;
-    float basey = series_tail->base.y;
+    series_tail->base = &series_tail->prev->tip;
+    float basex = series_tail->base->x;
+    float basey = series_tail->base->y;
 
-    series_tail->tip = (Vector2){ ((series_tail->mag) * cos(phase)) + basex,
-                                  -((series_tail->mag) * sin(phase)) + basey };
+    series_tail->tip
+      = (Vector2){ series_tail->mag * cos(phase) + basex, -series_tail->mag * sin(phase) + basey };
 
     series_tail->next = NULL;
 }
 
-Vector2 translate_point(Vector2 point, Vector2 orig, float omega)
-{
-    float psin = sinf(omega), pcos = cosf(omega);
-    float x = point.x - orig.x;
-    float y = point.y - orig.y;
-
-    // [x'] = [x][cos theta   -sin theta]
-    // [y'] = [y][sin theta    cos theta]
-    return (Vector2){ orig.x + (x * pcos - y * psin), orig.y + (x * psin + y * pcos) };
-}
-
-void translate_arrow(Harmonic *h, float omega)
-{
-    Vector2 orig = { 0 };
-
-    if (h->prev != NULL)
-        orig = h->prev->tip;
-
-    h->base = translate_point(h->base, orig, omega);
-    h->tip = translate_point(h->tip, orig, omega);
-}
-
-void move_arrow(Harmonic *h, Vector2 dist)
-{
-    h->base.x += dist.x;
-    h->base.y += dist.y;
-    h->tip.x += dist.x;
-    h->tip.y += dist.y;
-}
-
-void update_state(Harmonic *series)
+void translate_series(Harmonic *series)
 {
     Harmonic *cur = series;
-    float     omega;
     float     dt = GetFrameTime();
 
-    Vector2 diff = { 0 };
-    while (cur->next != NULL)
+    while (cur != NULL)
     {
-        omega = cur->omega * dt;
-        Vector2 nextarrbaseold = cur->tip;
+        cur->theta += cur->omega * dt;
+        cur->tip.x = cur->base->x + (cur->mag * cos(cur->theta));
+        cur->tip.y = cur->base->y - (cur->mag * sin(cur->theta));
 
-        translate_arrow(cur, omega);
-        diff.x -= nextarrbaseold.x - cur->tip.x;
-        diff.y -= nextarrbaseold.y - cur->tip.y;
-        move_arrow(cur->next, diff);
         cur = cur->next;
     }
-    omega = cur->omega * dt;
-    translate_arrow(cur, omega);
 }
 
 void init(const char *path)
@@ -152,8 +118,6 @@ void init(const char *path)
 
     if (!cJSON_IsNumber(njson))
         assert(0);
-
-    int total = cJSON_GetNumberValue(njson);  // unused
 
     cJSON *harmonics = cJSON_GetObjectItemCaseSensitive(json, "harmonics");
     if (!harmonics)
@@ -229,12 +193,13 @@ int main(int argc, char *argv[])
                                 (Vector2)   { -screenWidth * 0.5f, -screenHeight * 0.5 }, WHITE);
 
 
+                        cur = series_head;
                         while (cur->next != NULL)
                         {
-                            DrawSplineLinear((Vector2[]){ cur->base, cur->tip }, 6, 2.0f, DEEP_SPACE);
+                            DrawLineEx(*cur->base, cur->tip, 3.0f, BLACK);
                             cur = cur->next;
                         }
-                        DrawSplineLinear((Vector2[]){ cur->base, cur->tip }, 6, 2.0f, RED);
+                            DrawLineEx(*cur->base, cur->tip, 3.0f, RED);
                         line[c] = cur->tip;
                         c = (c + 1) % 2;
                                 
