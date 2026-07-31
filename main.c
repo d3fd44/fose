@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define UNIT_SIZE  200
+#define UNIT_SIZE  350
 
 #define DEEP_SPACE (Color){ 24, 21, 34, 255 }
 
@@ -210,10 +210,12 @@ int main(int argc, char *argv[])
                         cur = series_head;
                         while (cur->next != NULL)
                         {
-                            DrawLineEx(*cur->base, cur->tip, 3.0f, BLACK);
+                            DrawLineEx(*cur->base, cur->tip, 2.0f, BLACK);
+                            DrawCircleV(*cur->base, 1.0f, BLACK);
                             cur = cur->next;
                         }
-                            DrawLineEx(*cur->base, cur->tip, 3.0f, RED);
+                        DrawLineEx(*cur->base, cur->tip, 2.0f, RED);
+                        DrawCircleV(*cur->base, 1.0f, RED);
                         line[c] = cur->tip;
                         c = (c + 1) % 2;
                                 
@@ -222,7 +224,7 @@ int main(int argc, char *argv[])
         BeginTextureMode(canvas);
                 BeginMode2D(cam);
                         
-                        DrawLineEx(line[0], line[1], 5.5f, BLUE);
+                        DrawLineEx(line[0], line[1], 2.0f, BLUE);
 
                 EndMode2D();
         EndTextureMode();
