@@ -185,8 +185,8 @@ int main(int argc, char *argv[])
     while (!WindowShouldClose())
     {
         cam.zoom = expf(logf(cam.zoom) + ((float)GetMouseWheelMove() * 0.075f));
-        if (cam.zoom > 5.0f) // i can actually use Clamp here (i copy-paste'd it from a raylib example)
-            cam.zoom = 5.0f;
+        if (cam.zoom > 8.0f) // i can actually use Clamp here (i copy-paste'd it from a raylib example)
+            cam.zoom = 8.0f;
         else if (cam.zoom < -1.1f)
             cam.zoom = 0.1f;
 
@@ -233,11 +233,47 @@ int main(int argc, char *argv[])
                     DrawLineEx(*cur->base, cur->tip, ARROW_THICKNESS, BLACK);
                     DrawCircleV(*cur->base, ARROW_THICKNESS * 0.5f, BLACK);
 
+                    float length = Vector2Length(Vector2Subtract(cur->tip, *cur->base));
+                    if (length >= 0.0001f)
+                    {
+                        Vector2 unit_vector = Vector2Scale(Vector2Subtract(cur->tip, *cur->base), 1 / length);
+                        Vector2 normal_vector = { -unit_vector.y, unit_vector.x };
+
+                        float head_height = cur->mag * 0.125f;
+                        float head_base = head_height * 0.866f;
+
+                        Vector2 head_anchor = Vector2Subtract(cur->tip, Vector2Scale(unit_vector, head_height));
+                        DrawTriangle(
+                            cur->tip,
+                            Vector2Subtract(head_anchor, Vector2Scale(normal_vector, head_base * 0.5f)),
+                            Vector2Add(head_anchor, Vector2Scale(normal_vector, head_base * 0.5f)),
+                            BLACK
+                        );
+                    }
+
                     cur = cur->next;
                 }
 
                 DrawLineEx(*cur->base, cur->tip, ARROW_THICKNESS, RED);
                 DrawCircleV(*cur->base, ARROW_THICKNESS * 0.5f, RED);
+
+                float length = Vector2Length(Vector2Subtract(cur->tip, *cur->base));
+                if (length >= 0.0001f)
+                {
+                    Vector2 unit_vector = Vector2Scale(Vector2Subtract(cur->tip, *cur->base), 1 / length);
+                    Vector2 normal_vector = { -unit_vector.y, unit_vector.x };
+
+                    float head_height = cur->mag * 0.125f;
+                    float head_base = head_height * 0.866f;
+
+                    Vector2 head_anchor = Vector2Subtract(cur->tip, Vector2Scale(unit_vector, head_height));
+                    DrawTriangle(
+                        cur->tip,
+                        Vector2Subtract(head_anchor, Vector2Scale(normal_vector, head_base * 0.5f)),
+                        Vector2Add(head_anchor, Vector2Scale(normal_vector, head_base * 0.5f)),
+                        RED
+                    );
+                }
 
             EndMode2D();
             DrawFPS(10, 10);
