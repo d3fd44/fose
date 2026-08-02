@@ -1,14 +1,15 @@
 #include <assert.h>
 #include <cjson/cJSON.h>
-#include <math.h>
 #include <raylib.h>
 #include <raymath.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#define UNIT_SIZE  350
+#define UNIT_SIZE        200
+#define OMEGA_MULTIPLIER 0.3f
+#define ARROW_THICKNESS  1.0f
 
-#define DEEP_SPACE (Color){ 24, 21, 34, 255 }
+#define DEEP_SPACE       (Color){ 24, 21, 34, 255 }
 
 typedef struct Harmonic
 {
@@ -26,8 +27,9 @@ typedef struct Harmonic
 Harmonic *series_head = NULL;
 Harmonic *series_tail = NULL;
 
-Vector2 ORIGIN = (Vector2){ 0.0f, 0.0f };
+Vector2 ORIGIN = { 0.0f, 0.0f };
 
+// idk why i am so pissed off from the json mechanism i did here...
 char *rjsonassert(const char *path)
 {
     FILE *fh = fopen(path, "r");
@@ -101,7 +103,7 @@ void translate_series(Harmonic *series)
 
     while (cur != NULL)
     {
-        cur->theta += cur->omega * dt;
+        cur->theta += cur->omega * dt * OMEGA_MULTIPLIER;
         cur->tip.x = cur->base->x + (cur->mag * cos(cur->theta));
         cur->tip.y = cur->base->y - (cur->mag * sin(cur->theta));
 
@@ -148,18 +150,16 @@ int main(int argc, char *argv[])
 {
     init(argc > 1 ? argv[1] : "./harmonics.json");
 
-    Harmonic *cur;
-
     SetTraceLogLevel(LOG_NONE);
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(1920, 1080, "GG");
     SetTargetFPS(60);
 
+    bool      paused = false;
+    Harmonic *cur;
+
     int screenHeight = GetScreenHeight();
     int screenWidth = GetScreenWidth();
-
-    Vector2       line[2] = { series_tail->tip, series_tail->tip };
-    unsigned char c = 0;
 
     Camera2D cam = { 0 };
     cam.target = (Vector2){ 0.0f, 0.0f };
@@ -167,69 +167,83 @@ int main(int argc, char *argv[])
     cam.rotation = 0.0f;
     cam.zoom = 1.0f;
 
+    Camera2D canvas_cam = { 0 };
+    canvas_cam.target = (Vector2){ 0.0f, 0.0f };
+    canvas_cam.offset = (Vector2){ screenWidth * 0.5f, screenHeight * 0.5f };
+    canvas_cam.rotation = 0.0f;
+    canvas_cam.zoom = 1.0f;
+
     RenderTexture2D canvas = LoadRenderTexture(screenWidth, screenHeight);
 
     // clang-format off
     BeginTextureMode(canvas);
-            ClearBackground((Color){ 0, 0, 0, 0 });
+        ClearBackground((Color){ 0, 0, 0, 0 });
     EndTextureMode();
+
+    Vector2 previous_tip = series_tail->tip;
 
     while (!WindowShouldClose())
     {
-        float wheel = GetMouseWheelMove();
-        if (wheel != 0)
+        cam.zoom = expf(logf(cam.zoom) + ((float)GetMouseWheelMove() * 0.075f));
+        if (cam.zoom > 5.0f) // i can actually use Clamp here (i copy-paste'd it from a raylib example)
+            cam.zoom = 5.0f;
+        else if (cam.zoom < -1.1f)
+            cam.zoom = 0.1f;
+
+        if (GetKeyPressed() == KEY_SPACE)
+            paused = !paused;
+
+        if (!paused)
         {
-            Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), cam);
+            translate_series(series_head);
 
-            cam.offset = GetMousePosition();
-            cam.target = mouseWorldPos;
+            Vector2 currentTip = series_tail->tip;
 
-            float scaleFactor = 1.0f + (0.25f * fabsf(wheel));
+            BeginTextureMode(canvas);
+                BeginMode2D(canvas_cam);
+                    DrawLineEx(previous_tip, currentTip, ARROW_THICKNESS * 2, BLUE);
+                EndMode2D();
+            EndTextureMode();
 
-            if (wheel < 0)
-                scaleFactor = 1.0f / scaleFactor;
-            
-            cam.zoom = Clamp(cam.zoom * scaleFactor, 0.1f, 10.0f);
+            previous_tip = currentTip;
         }
-        translate_series(series_head);
 
         BeginDrawing();
-                BeginMode2D(cam);
+            ClearBackground(RAYWHITE);
 
-                        ClearBackground(RAYWHITE);
-                        for (int x = -2000; x <= 2000; x += UNIT_SIZE) DrawLine(x, -2000, x, 2000, DEEP_SPACE);
-                        for (int y = -2000; y <= 2000; y += UNIT_SIZE) DrawLine(-2000, y, 2000, y, DEEP_SPACE);
-                        DrawFPS(- screenWidth / 2,screenHeight /-2);
+            BeginMode2D(cam);
 
-                        DrawTextureRec(
-                                canvas.texture,
-                                (Rectangle) {0, 0, (float)canvas.texture.width, -(float)canvas.texture.height},
-                                (Vector2)   { -screenWidth * 0.5f, -screenHeight * 0.5 }, WHITE);
+                for (int x = -2000; x <= 2000; x += UNIT_SIZE)
+                    DrawLine(x, -2000, x, 2000, DEEP_SPACE);
 
+                for (int y = -2000; y <= 2000; y += UNIT_SIZE)
+                    DrawLine(-2000, y, 2000, y, DEEP_SPACE);
 
-                        cur = series_head;
-                        while (cur->next != NULL)
-                        {
-                            DrawLineEx(*cur->base, cur->tip, 2.0f, BLACK);
-                            DrawCircleV(*cur->base, 1.0f, BLACK);
-                            cur = cur->next;
-                        }
-                        DrawLineEx(*cur->base, cur->tip, 2.0f, RED);
-                        DrawCircleV(*cur->base, 1.0f, RED);
-                        line[c] = cur->tip;
-                        c = (c + 1) % 2;
-                                
-                EndMode2D();
+                DrawTextureRec(
+                    canvas.texture,
+                    (Rectangle){ 0.0f, 0.0f, (float)canvas.texture.width, -(float)canvas.texture.height },
+                    (Vector2){ -canvas.texture.width * 0.5f, -canvas.texture.height * 0.5f },
+                    WHITE
+                );
+
+                cur = series_head;
+
+                while (cur->next != NULL)
+                {
+                    DrawLineEx(*cur->base, cur->tip, ARROW_THICKNESS, BLACK);
+                    DrawCircleV(*cur->base, ARROW_THICKNESS * 0.5f, BLACK);
+
+                    cur = cur->next;
+                }
+
+                DrawLineEx(*cur->base, cur->tip, ARROW_THICKNESS, RED);
+                DrawCircleV(*cur->base, ARROW_THICKNESS * 0.5f, RED);
+
+            EndMode2D();
+            DrawFPS(10, 10);
         EndDrawing();
-        BeginTextureMode(canvas);
-                BeginMode2D(cam);
-                        
-                        DrawLineEx(line[0], line[1], 2.0f, BLUE);
-
-                EndMode2D();
-        EndTextureMode();
-        // clang-format on
     }
+    // clang-format on
 
     UnloadRenderTexture(canvas);
     CloseWindow();
