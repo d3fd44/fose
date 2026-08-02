@@ -7,7 +7,7 @@
 
 #define UNIT_SIZE        200
 #define OMEGA_MULTIPLIER 0.3f
-#define ARROW_THICKNESS  1.0f
+#define ARROW_THICKNESS  2.0f
 
 #define DEEP_SPACE       (Color){ 24, 21, 34, 255 }
 
@@ -146,6 +146,13 @@ void init(const char *path)
     }
 }
 
+float give_thickness(float mag)
+{
+    float thickness = ARROW_THICKNESS * powf(mag / UNIT_SIZE, 0.85f);
+
+    return Clamp(thickness, 0.1f, 6.0f);
+}
+
 int main(int argc, char *argv[])
 {
     init(argc > 1 ? argv[1] : "./harmonics.json");
@@ -230,8 +237,8 @@ int main(int argc, char *argv[])
 
                 while (cur->next != NULL)
                 {
-                    DrawLineEx(*cur->base, cur->tip, ARROW_THICKNESS, BLACK);
-                    DrawCircleV(*cur->base, ARROW_THICKNESS * 0.5f, BLACK);
+                    DrawLineEx(*cur->base, cur->tip, give_thickness(cur->mag), BLACK);
+                    DrawCircleV(*cur->base, give_thickness(cur->mag) * 0.5f, BLACK);
 
                     float length = Vector2Length(Vector2Subtract(cur->tip, *cur->base));
                     if (length >= 0.0001f)
@@ -254,8 +261,8 @@ int main(int argc, char *argv[])
                     cur = cur->next;
                 }
 
-                DrawLineEx(*cur->base, cur->tip, ARROW_THICKNESS, RED);
-                DrawCircleV(*cur->base, ARROW_THICKNESS * 0.5f, RED);
+                DrawLineEx(*cur->base, cur->tip, give_thickness(cur->mag), RED);
+                DrawCircleV(*cur->base, give_thickness(cur->mag) * 0.5f, RED);
 
                 float length = Vector2Length(Vector2Subtract(cur->tip, *cur->base));
                 if (length >= 0.0001f)
