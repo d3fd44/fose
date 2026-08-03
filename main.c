@@ -17,7 +17,7 @@ typedef struct Harmonic
     double           omega;
     double           phase;
     double           theta;
-    Vector2         *base;
+    Vector2         *base; // points to the preious harmonic's tip; translate a single point instead of two
     Vector2          tip;
     struct Harmonic *next;
     struct Harmonic *prev;
