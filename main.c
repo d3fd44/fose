@@ -16,7 +16,7 @@ typedef struct Harmonic
     double           mag;
     double           omega;
     double           phase;
-    double           theta;  // current angle
+    double           theta;
     Vector2         *base;
     Vector2          tip;
     struct Harmonic *next;
@@ -111,6 +111,7 @@ void translate_series(Harmonic *series)
     }
 }
 
+// read json file, parse it, pass each harmonic to mkharmonic function and add it to the list
 void init(const char *path)
 {
     cJSON *json = cJSON_Parse(rjsonassert(path));
@@ -146,6 +147,7 @@ void init(const char *path)
     }
 }
 
+// increase/decrease thickness based on the magnitude
 float give_thickness(float mag)
 {
     float thickness = ARROW_THICKNESS * powf(mag / UNIT_SIZE, 0.85f);
@@ -158,31 +160,34 @@ int main(int argc, char *argv[])
     init(argc > 1 ? argv[1] : "./harmonics.json");
 
     SetTraceLogLevel(LOG_NONE);
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    // i'll handle resizing and zooming later, let it full screen for now
+    // SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(0, 0, "GG");
     SetTargetFPS(60);
 
-    bool      paused = false;
-    bool      follow = false;
-    bool      show_help = true;
+    bool paused = false;
+    bool follow = false;
+    bool show_help = true;
+
     Harmonic *cur;
 
-    int screenHeight = GetScreenHeight();
-    int screenWidth = GetScreenWidth();
+    int screen_height = GetScreenHeight();
+    int screen_width = GetScreenWidth();
 
     Camera2D cam = { 0 };
     cam.target = (Vector2){ 0.0f, 0.0f };
-    cam.offset = (Vector2){ screenWidth * 0.5f, screenHeight * 0.5f };
+    cam.offset = (Vector2){ screen_width * 0.5f, screen_height * 0.5f };
     cam.rotation = 0.0f;
     cam.zoom = 1.0f;
 
     Camera2D canvas_cam = { 0 };
     canvas_cam.target = (Vector2){ 0.0f, 0.0f };
-    canvas_cam.offset = (Vector2){ screenWidth * 0.5f, screenHeight * 0.5f };
+    canvas_cam.offset = (Vector2){ screen_width * 0.5f, screen_height * 0.5f };
     canvas_cam.rotation = 0.0f;
     canvas_cam.zoom = 1.0f;
 
-    RenderTexture2D canvas = LoadRenderTexture(screenWidth, screenHeight);
+    // shape drawing happens in this canvas
+    RenderTexture2D canvas = LoadRenderTexture(screen_width, screen_height);
 
     // clang-format off
     BeginTextureMode(canvas);
@@ -260,18 +265,26 @@ int main(int argc, char *argv[])
 
                 while (cur->next != NULL)
                 {
-                    DrawLineEx(*cur->base, Vector2MoveTowards(cur->tip, *cur->base, cur->mag * 0.125f), give_thickness(cur->mag), BLACK);
-                    DrawCircleV(*cur->base, give_thickness(cur->mag) * 0.5f, BLACK);
+                    // draw arrow's line
+                    DrawLineEx(
+                        *cur->base,
+                        Vector2MoveTowards(cur->tip, *cur->base, cur->mag * 0.125f), // scale down to avoid overlapping with the triangle head
+                        give_thickness(cur->mag),
+                        BLACK
+                    );
+                    DrawCircleV(*cur->base, give_thickness(cur->mag) * 0.5f, BLACK); // covers the sharp edges
 
+                    // draw arrow's triangle head
                     float length = Vector2Length(Vector2Subtract(cur->tip, *cur->base));
                     if (length >= 0.0001f)
                     {
                         Vector2 unit_vector = Vector2Scale(Vector2Subtract(cur->tip, *cur->base), 1 / length);
-                        Vector2 normal_vector = { -unit_vector.y, unit_vector.x };
+                        Vector2 normal_vector = { -unit_vector.y, unit_vector.x }; // the perpendicular vector, idk if the naming here is correct
 
-                        float head_height = cur->mag * 0.125f;
-                        float head_base = head_height * 0.866f;
+                        float head_height = cur->mag * 0.125f; // same sclaing-down value applied to the line
+                        float head_base = head_height * 0.866f; // the height ration to the base length in 0.866 in equilateral triangle
 
+                        // the point where it goes perpendicularly to the left/right from the original line to form the triangle head with the tip
                         Vector2 head_anchor = Vector2Subtract(cur->tip, Vector2Scale(unit_vector, head_height));
                         DrawTriangle(
                             cur->tip,
@@ -309,7 +322,7 @@ int main(int argc, char *argv[])
             DrawFPS(10, 10);
             if (show_help)
             {
-                Rectangle help_rect = { screenWidth - 740, 20, 720, 260 };
+                Rectangle help_rect = { screen_width - 740, 20, 720, 260 };
                 DrawRectangleRec(help_rect, WHITE);
                 DrawRectangleLinesEx(help_rect, 8.0f, BLACK);
                 DrawText("H: Show/Hide Help\n"
