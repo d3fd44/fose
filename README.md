@@ -33,7 +33,7 @@ To-Do:
 - [ ] nuke the json mechanism and replace it with something more usable/efficient
 - [ ] integrate the FFT module into the app 
 - [ ] add free move/zoom feature
-- [ ] add simple cli interface with argument processing
+- [ ] add simple cli interface with argument processing for some options (colors, scaling, etc).
 - [ ] add export-to-video feature through ffmpeg (seems possible based on tsoding-yt)
 
 demo:
