@@ -27,6 +27,14 @@ the first arg is the json file describing the series and it has the following fo
 }
 ```
 each array has [magnitude, angular velocity (omega), phase].
-
+---
+To-Do:
+- [ ] nuke the json mechanism and replace it with something more usable/efficient
+- [ ] integrate the FFT module into the app 
+- [ ] add free move/zoom feature
+- [ ] add simple cli interface with argument processing
+- [ ] add export-to-video feature through ffmpeg (seems possible based on tsoding-yt)
+---
+demo:
 
 https://github.com/user-attachments/assets/25c17f12-eb00-4efb-be1f-bf8a74479fe8
