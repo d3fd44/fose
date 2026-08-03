@@ -8,7 +8,8 @@ dependencies:
 
 make sure both are installed.
 
-** The app currently has the worst interface ever, you have to get the points out of the image yourself, and do FFT yourself, and then place teh output nicely in a json file.** Well, theres an FFT utility i prepared for you :D.
+**The app currently has the worst interface ever created, you have to get the points of the shape you want to draw out of the image yourself, and do FFT yourself, and then place teh output nicely in a json file.** Well, theres an FFT utility i prepared for you (even worse interface) :D.
+
 usage:\
     `./fose examples/random.json`
 
