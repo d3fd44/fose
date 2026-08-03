@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 #define UNIT_SIZE        200
-#define OMEGA_MULTIPLIER 0.3f
+#define OMEGA_MULTIPLIER 1.0f
 #define ARROW_THICKNESS  2.0f
 
 #define DEEP_SPACE       (Color){ 24, 21, 34, 255 }
@@ -159,10 +159,11 @@ int main(int argc, char *argv[])
 
     SetTraceLogLevel(LOG_NONE);
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(1920, 1080, "GG");
+    InitWindow(0, 0, "GG");
     SetTargetFPS(60);
 
     bool      paused = false;
+    bool      follow = false;
     Harmonic *cur;
 
     int screenHeight = GetScreenHeight();
@@ -192,13 +193,27 @@ int main(int argc, char *argv[])
     while (!WindowShouldClose())
     {
         cam.zoom = expf(logf(cam.zoom) + ((float)GetMouseWheelMove() * 0.075f));
-        if (cam.zoom > 8.0f) // i can actually use Clamp here (i copy-paste'd it from a raylib example)
-            cam.zoom = 8.0f;
+
+        if (cam.zoom > 15.0f) // i can actually use Clamp here (i copy-paste'd it from a raylib example)
+            cam.zoom = 15.0f;
         else if (cam.zoom < -1.1f)
             cam.zoom = 0.1f;
 
-        if (GetKeyPressed() == KEY_SPACE)
-            paused = !paused;
+        if (follow)
+            cam.target = series_tail->tip;
+        else
+            cam.target = Vector2Zero();
+
+        switch (GetKeyPressed())
+        {
+            case KEY_F:
+                follow = !follow;
+                break;
+            case KEY_SPACE:
+                paused = !paused;
+                break;
+            default: break;
+        }
 
         if (!paused)
         {
@@ -208,7 +223,7 @@ int main(int argc, char *argv[])
 
             BeginTextureMode(canvas);
                 BeginMode2D(canvas_cam);
-                    DrawLineEx(previous_tip, currentTip, ARROW_THICKNESS * 2, BLUE);
+                    DrawLineEx(previous_tip, currentTip, 1.0f, BLUE);
                 EndMode2D();
             EndTextureMode();
 
