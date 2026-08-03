@@ -260,7 +260,7 @@ int main(int argc, char *argv[])
 
                 while (cur->next != NULL)
                 {
-                    DrawLineEx(*cur->base, cur->tip, give_thickness(cur->mag), BLACK);
+                    DrawLineEx(*cur->base, Vector2MoveTowards(cur->tip, *cur->base, cur->mag * 0.125f), give_thickness(cur->mag), BLACK);
                     DrawCircleV(*cur->base, give_thickness(cur->mag) * 0.5f, BLACK);
 
                     float length = Vector2Length(Vector2Subtract(cur->tip, *cur->base));
@@ -284,7 +284,7 @@ int main(int argc, char *argv[])
                     cur = cur->next;
                 }
 
-                DrawLineEx(*cur->base, cur->tip, give_thickness(cur->mag), RED);
+                DrawLineEx(*cur->base, Vector2MoveTowards(cur->tip, *cur->base, cur->mag * 0.125f), give_thickness(cur->mag), RED);
                 DrawCircleV(*cur->base, give_thickness(cur->mag) * 0.5f, RED);
 
                 float length = Vector2Length(Vector2Subtract(cur->tip, *cur->base));
