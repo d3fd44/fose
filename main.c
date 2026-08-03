@@ -164,6 +164,7 @@ int main(int argc, char *argv[])
 
     bool      paused = false;
     bool      follow = false;
+    bool      show_help = true;
     Harmonic *cur;
 
     int screenHeight = GetScreenHeight();
@@ -206,12 +207,19 @@ int main(int argc, char *argv[])
 
         switch (GetKeyPressed())
         {
+            case KEY_H:
+                show_help = !show_help;
+                break;
             case KEY_F:
                 follow = !follow;
                 break;
             case KEY_SPACE:
                 paused = !paused;
                 break;
+            case KEY_C:
+                BeginTextureMode(canvas);
+                    ClearBackground((Color){ 0, 0, 0, 0 });
+                EndTextureMode();
             default: break;
         }
 
@@ -299,6 +307,22 @@ int main(int argc, char *argv[])
 
             EndMode2D();
             DrawFPS(10, 10);
+            if (show_help)
+            {
+                Rectangle help_rect = { screenWidth - 740, 20, 720, 260 };
+                DrawRectangleRec(help_rect, WHITE);
+                DrawRectangleLinesEx(help_rect, 8.0f, BLACK);
+                DrawText("H: Show/Hide Help\n"
+                         "F: Follow Drawing Head\n"
+                         "C: Clear Canvas\n"
+                         "<Space>: Stop/Continue Drawing\n"
+                         "<Mouse-Wheel>: Zoom",
+                    help_rect.x + 20,
+                    help_rect.y + 20,
+                    40,
+                    BLACK
+                );
+            }
         EndDrawing();
     }
     // clang-format on
