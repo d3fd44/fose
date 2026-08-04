@@ -133,7 +133,7 @@ void init(const char *path)
     {
         cJSON *mag_omega_phase[3];
         cJSON *number = NULL;
-        char   i = 0;
+        int    i = 0;
 
         cJSON_ArrayForEach(number, h)
         {
