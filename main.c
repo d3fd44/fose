@@ -2,6 +2,7 @@
 #include <cjson/cJSON.h>
 #include <raylib.h>
 #include <raymath.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -152,7 +153,7 @@ float give_thickness(float mag)
 {
     float thickness = ARROW_THICKNESS * powf(mag / UNIT_SIZE, 0.85f);
 
-    return Clamp(thickness, 0.1f, 6.0f);
+    return Clamp(thickness, 0.00001f, 6.0f);
 }
 
 int main(int argc, char *argv[])
@@ -200,15 +201,11 @@ int main(int argc, char *argv[])
     {
         cam.zoom = expf(logf(cam.zoom) + ((float)GetMouseWheelMove() * 0.075f));
 
-        if (cam.zoom > 15.0f) // i can actually use Clamp here (i copy-paste'd it from a raylib example)
-            cam.zoom = 15.0f;
-        else if (cam.zoom < -1.1f)
+        if (cam.zoom < 0.1f)
             cam.zoom = 0.1f;
 
         if (follow)
             cam.target = series_tail->tip;
-        else
-            cam.target = Vector2Zero();
 
         switch (GetKeyPressed())
         {
@@ -225,8 +222,34 @@ int main(int argc, char *argv[])
                 BeginTextureMode(canvas);
                     ClearBackground((Color){ 0, 0, 0, 0 });
                 EndTextureMode();
-            default: break;
+                break;
+            case KEY_R:
+                follow = false;
+                cam.target = Vector2Zero();
+                cam.zoom = 1.0f;
+                break;
+            case KEY_W:
+            case KEY_UP:
+            case KEY_A:
+            case KEY_LEFT:
+            case KEY_S:
+            case KEY_DOWN:
+            case KEY_D:
+            case KEY_RIGHT:
+                follow = false;
+                break;
+            default:
+                break;
         }
+
+        if (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP))
+            cam.target.y -= 10 * (1 / cam.zoom);
+        if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT))
+            cam.target.x -= 10 * (1 / cam.zoom);
+        if (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN))
+            cam.target.y += 10 * (1 / cam.zoom);
+        if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT))
+            cam.target.x += 10 * (1 / cam.zoom);
 
         if (!paused)
         {
@@ -276,7 +299,7 @@ int main(int argc, char *argv[])
 
                     // draw arrow's triangle head
                     float length = Vector2Length(Vector2Subtract(cur->tip, *cur->base));
-                    if (length >= 0.0001f)
+                    if (length >= 0.000001f) // zero guard
                     {
                         Vector2 unit_vector = Vector2Scale(Vector2Subtract(cur->tip, *cur->base), 1 / length);
                         Vector2 normal_vector = { -unit_vector.y, unit_vector.x }; // the perpendicular vector, idk if the naming here is correct
@@ -301,7 +324,7 @@ int main(int argc, char *argv[])
                 DrawCircleV(*cur->base, give_thickness(cur->mag) * 0.5f, RED);
 
                 float length = Vector2Length(Vector2Subtract(cur->tip, *cur->base));
-                if (length >= 0.0001f)
+                if (length >= 0.000001f)
                 {
                     Vector2 unit_vector = Vector2Scale(Vector2Subtract(cur->tip, *cur->base), 1 / length);
                     Vector2 normal_vector = { -unit_vector.y, unit_vector.x };
@@ -322,13 +345,15 @@ int main(int argc, char *argv[])
             DrawFPS(10, 10);
             if (show_help)
             {
-                Rectangle help_rect = { screen_width - 740, 20, 720, 260 };
+                Rectangle help_rect = { screen_width - 740, 20, 720, 320 };
                 DrawRectangleRec(help_rect, WHITE);
                 DrawRectangleLinesEx(help_rect, 8.0f, BLACK);
                 DrawText("H: Show/Hide Help\n"
                          "F: Follow Drawing Head\n"
                          "C: Clear Canvas\n"
+                         "R: Reset Zoom\n"
                          "<Space>: Stop/Continue Drawing\n"
+                         "<WASD/Arrows>: Move\n"
                          "<Mouse-Wheel>: Zoom",
                     help_rect.x + 20,
                     help_rect.y + 20,
