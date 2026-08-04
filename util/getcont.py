@@ -3,9 +3,8 @@ import cv2
 
 font = cv2.FONT_HERSHEY_COMPLEX 
 
-# img = cv2.imread('arch.png', cv2.IMREAD_GRAYSCALE) 
-img = cv2.imread('kid.jpg', cv2.IMREAD_GRAYSCALE) 
-img = cv2.bitwise_not(img)
+img = cv2.imread('./car.png', cv2.IMREAD_GRAYSCALE) 
+# img = cv2.bitwise_not(img)
 
 _, threshold = cv2.threshold(img, 110, 255, cv2.THRESH_BINARY) 
 
