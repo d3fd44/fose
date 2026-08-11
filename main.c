@@ -161,8 +161,10 @@ int main(int argc, char *argv[])
     init(argc > 1 ? argv[1] : "./harmonics.json");
 
     SetTraceLogLevel(LOG_NONE);
-    // i'll handle resizing and zooming later, let it full screen for now
+
     // SetConfigFlags(FLAG_MSAA_4X_HINT); // seems not working, i'll try the a blur shader
+    // https://github.com/raysan5/raylib/issues/4038#issuecomment-2171299944
+
     InitWindow(0, 0, "GG");
     SetTargetFPS(60);
 
@@ -255,15 +257,15 @@ int main(int argc, char *argv[])
         {
             translate_series(series_head);
 
-            Vector2 currentTip = series_tail->tip;
+            Vector2 current_tip = series_tail->tip;
 
             BeginTextureMode(canvas);
                 BeginMode2D(canvas_cam);
-                    DrawLineEx(previous_tip, currentTip, 1.0f, BLUE);
+                    DrawLineEx(previous_tip, current_tip, 1.0f, BLUE);
                 EndMode2D();
             EndTextureMode();
 
-            previous_tip = currentTip;
+            previous_tip = current_tip;
         }
 
         BeginDrawing();
