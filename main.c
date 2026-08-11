@@ -14,12 +14,12 @@
 
 typedef struct Harmonic
 {
-    double           mag;
-    double           omega;
-    double           phase;
-    double           theta;
-    Vector2         *base; // points to the preious harmonic's tip; translate a single point instead of two
-    Vector2          tip;
+    double   mag;
+    double   omega;
+    double   phase;
+    double   theta;
+    Vector2 *base;  // points to the preious harmonic's tip; translate a single point instead of two
+    Vector2  tip;
     struct Harmonic *next;
     struct Harmonic *prev;
 
@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
 
     SetTraceLogLevel(LOG_NONE);
     // i'll handle resizing and zooming later, let it full screen for now
-    // SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    // SetConfigFlags(FLAG_MSAA_4X_HINT); // seems not working, i'll try the a blur shader
     InitWindow(0, 0, "GG");
     SetTargetFPS(60);
 
@@ -277,12 +277,15 @@ int main(int argc, char *argv[])
                 for (int y = -2000; y <= 2000; y += UNIT_SIZE)
                     DrawLine(-2000, y, 2000, y, DEEP_SPACE);
 
-                DrawTextureRec(
-                    canvas.texture,
-                    (Rectangle){ 0.0f, 0.0f, (float)canvas.texture.width, -(float)canvas.texture.height },
-                    (Vector2){ -canvas.texture.width * 0.5f, -canvas.texture.height * 0.5f },
-                    WHITE
-                );
+                // https://www.raylib.com/examples/shaders/loader.html?name=shaders_postprocessing
+                BeginShaderMode(LoadShader(0, TextFormat("resources/shaders/blur.fs")));
+                    DrawTextureRec(
+                        canvas.texture,
+                        (Rectangle){ 0.0f, 0.0f, (float)canvas.texture.width, -(float)canvas.texture.height },
+                        (Vector2){ -canvas.texture.width * 0.5f, -canvas.texture.height * 0.5f },
+                        WHITE
+                    );
+                EndShaderMode();
 
                 cur = series_head;
 
